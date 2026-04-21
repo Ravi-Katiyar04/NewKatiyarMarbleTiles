@@ -12,6 +12,7 @@ import ProductDetails from "./pages/ProductDetails"
 import Cart from "./pages/Cart"
 import AddAddress from "./pages/AddAddress"
 import MyOrder from "./pages/MyOrder"
+import Contact from "./pages/Contact"
 import SellerLogin from "./components/seller/SellerLogin"
 import SellerLayout from "./pages/seller/SellerLayout"
 import AddProduct from "./pages/seller/AddProduct"
@@ -41,6 +42,7 @@ const App = () => {
           <Route path="/cart" element={<Cart />} />
           <Route path="/add-address" element={<AddAddress />} />
           <Route path="/my-orders" element={<MyOrder />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/loader" element={<Loading />} />
 
           <Route path="/seller" element={isSellar  ? <SellerLayout /> : <SellerLogin />} >
