@@ -11,7 +11,6 @@ const Cart = () => {
     const [addresses, setAddress] = useState([]);
     const [showAddress, setShowAddress] = useState(false)
     const [selectedAddress, setSelectedAddress] = useState(null);
-    const [selectedPayment, setSelectedPayment] = useState("COD");
 
     const getCart= () => {
         let tempArray = [];
@@ -43,30 +42,15 @@ const Cart = () => {
             if (!selectedAddress) {
                 return toast.error("Please select an address");
             }
-            if(selectedPayment === "COD"){
-                const { data } = await axios.post("/api/order/cod", { 
-                    userId: user._id,
-                    items: cartArray.map((item) => ({ product: item._id, quantity: item.quantity })),
-                    address: selectedAddress._id,
-                 });
-                if (data.success) {
-                    toast.success(data.message);
-                    setCartItems({});
-                    navigate("/my-orders");
-                } else {
-                    toast.error(data.message);
-                }
-            }else{
-                const { data } = await axios.post("/api/order/stripe", { 
-                    userId: user._id,
-                    items: cartArray.map((item) => ({ product: item._id, quantity: item.quantity })),
-                    address: selectedAddress._id,
-                 });
-                if (data.success) {
-                    window.location.replace(data.url);
-                } else {
-                    toast.error(data.message);
-                }
+            const { data } = await axios.post("/api/order/stripe", { 
+                userId: user._id,
+                items: cartArray.map((item) => ({ product: item._id, quantity: item.quantity })),
+                address: selectedAddress._id,
+             });
+            if (data.success) {
+                window.location.replace(data.url);
+            } else {
+                toast.error(data.message);
             }
         } catch (error) {
             toast.error(error.message); 
@@ -89,7 +73,7 @@ const Cart = () => {
         <div className="flex flex-col md:flex-row md:py-16 py-6 max-w-6xl w-full  mx-auto">
             <div className='flex-1 max-w-4xl'>
                 <h1 className="text-2xl md:text-3xl font-medium mb-6">
-                    Shopping Cart <span className="text-sm text-indigo-500">{getCartCount()} Items</span>
+                    Cart / Booking <span className="text-sm text-indigo-500">{getCartCount()} Items</span>
                 </h1>
 
                 <div className="grid grid-cols-[2fr_1fr_1fr] text-gray-500 text-base font-medium pb-3">
@@ -134,7 +118,7 @@ const Cart = () => {
             </div>
 
             <div className="max-w-[360px] w-full bg-gray-100/40 p-5 max-md:mt-16 border border-gray-300/70">
-                <h2 className="text-xl md:text-xl font-medium">Order Summary</h2>
+                <h2 className="text-xl md:text-xl font-medium">Booking Summary</h2>
                 <hr className="border-gray-300 my-5" />
 
                 <div className="mb-6">
@@ -158,12 +142,10 @@ const Cart = () => {
                         )}
                     </div>
 
-                    <p className="text-sm font-medium uppercase mt-6">Payment Method</p>
-
-                    <select onChange={(e) => setSelectedPayment(e.target.value)} className="w-full border border-gray-300 bg-white px-3 py-2 mt-2 outline-none">
-                        <option value="COD">Cash On Delivery</option>
-                        <option value="Online">Online Payment</option>
-                    </select>
+                    <p className="text-sm font-medium uppercase mt-6">Payment</p>
+                    <p className="mt-2 text-sm text-gray-500">
+                        Pay <span className="font-semibold text-gray-700">10%</span> deposit now to book. Our team will contact you for measurement, delivery and remaining payment.
+                    </p>
                 </div>
 
                 <hr className="border-gray-300" />
@@ -181,10 +163,13 @@ const Cart = () => {
                     <p className="flex justify-between text-lg font-medium mt-3">
                         <span>Total Amount:</span><span>{currency}{(getTotalPrice() * 1.02).toFixed(2)}</span>
                     </p>
+                    <p className="flex justify-between font-semibold text-indigo-600">
+                        <span>Pay Now (10%):</span><span>{currency}{((getTotalPrice() * 1.02) * 0.10).toFixed(2)}</span>
+                    </p>
                 </div>
 
                 <button onClick={placeOrder} className="w-full py-3 mt-6 cursor-pointer bg-indigo-500 text-white font-medium hover:bg-indigo-600 transition">
-                   {selectedPayment === "COD" ? "Place Order" : "Pay Now"}
+                   Pay 10% Deposit & Book
                 </button>
             </div>
         </div>

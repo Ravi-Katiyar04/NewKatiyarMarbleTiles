@@ -8,15 +8,15 @@ const ProductCategory = () => {
 
     const { category } = useParams()
     const searchCategory = categories.find((item) => item.path.toLowerCase() === category.toLowerCase())
-    const filteredProducts = products.filter((product) => product.category.toLowerCase() === category)
+    const filteredProducts = products.filter((product) => product.category.toLowerCase() === category.toLowerCase())
     return (
         <div>
             { searchCategory && (
-               <div className='my-20'>
+               <div className='my-10 md:my-20'>
                     <p className='text-2xl lg:text-3xl font-medium  uppercase'>{searchCategory.text.toUpperCase()}</p>
                     <div className='w-16 h-1 bg-primary rounded-full mb-10'></div>
                     {filteredProducts.length > 0 ? (
-                        <div className='grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 md:gap-5 lg:grid-cols-5 lg:gap-6 mt-6'>
+                        <div className='grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-5 lg:grid-cols-5 lg:gap-6 mt-6'>
                             {filteredProducts.map((product) => (
                                 <ProductCard key={product._id} product={product} />
                             ))}

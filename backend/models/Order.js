@@ -2,14 +2,14 @@ import mongoose from "mongoose";
 
 const orderSchema = new mongoose.Schema({
     userId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
     },
     items: [
         {
             product: {
-                type: String,
+                type: mongoose.Schema.Types.ObjectId,
                 ref: "Product",
                 required: true,
             },
@@ -19,12 +19,22 @@ const orderSchema = new mongoose.Schema({
             },
            
     }],
+    // Total order value (full amount, not just deposit)
     amount: {
         type: Number,
         required: true,
     },
+    // Amount actually collected online (e.g. 10% booking deposit)
+    paidAmount: {
+        type: Number,
+        default: 0,
+    },
+    depositPercent: {
+        type: Number,
+        default: 10,
+    },
     address: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         required: true,
         ref: "Address",
     },        
