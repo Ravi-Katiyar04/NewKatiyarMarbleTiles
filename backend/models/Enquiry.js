@@ -15,8 +15,7 @@ const enquirySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Enquiry =
-  mongoose.models.enquiry || mongoose.model("enquiry", enquirySchema);
+const Enquiry = mongoose.models.Enquiry || mongoose.model("Enquiry", enquirySchema);
 
 export default Enquiry;
 
