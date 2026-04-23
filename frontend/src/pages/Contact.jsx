@@ -21,7 +21,6 @@ const Contact = () => {
       return;
     }
 
-    // No backend endpoint exists yet; keep it as a friendly local form.
     toast.success("Thanks! We’ll get back to you soon.");
     setForm({ name: "", email: "", message: "" });
   };
@@ -33,11 +32,12 @@ const Contact = () => {
           Contact us
         </h1>
         <p className="mt-2 text-gray-600">
-          Have a question about an availability, Quality, or price? Send us a message
+          Have a question about availability, quality, or pricing? Send us a message
           and we’ll respond as soon as possible.
         </p>
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* LEFT INFO SECTION */}
           <div className="md:col-span-1 space-y-4">
             <div className="p-5 rounded-xl border border-gray-200 bg-white">
               <p className="text-sm text-gray-500">Email</p>
@@ -45,10 +45,23 @@ const Contact = () => {
                 new_katiyar_marble_tiles@gmail.com
               </p>
             </div>
+
             <div className="p-5 rounded-xl border border-gray-200 bg-white">
               <p className="text-sm text-gray-500">Phone</p>
-              <p className="mt-1 font-medium text-gray-800">+91 8445273731</p>
+              <p className="mt-1 font-medium text-gray-800">
+                +91 8445273731
+              </p>
             </div>
+
+            {/* ✅ NEW ADDRESS CARD */}
+            <div className="p-5 rounded-xl border border-gray-200 bg-white">
+              <p className="text-sm text-gray-500">Address</p>
+              <p className="mt-1 text-sm font-medium text-gray-800 leading-relaxed">
+                Rajpur Road, Vikash Nagar, Sikandra, <br />
+                Kanpur Dehat, U.P., India – 209125
+              </p>
+            </div>
+
             <div className="p-5 rounded-xl border border-gray-200 bg-white">
               <p className="text-sm text-gray-500">Hours</p>
               <p className="mt-1 font-medium text-gray-800">
@@ -57,6 +70,7 @@ const Contact = () => {
             </div>
           </div>
 
+          {/* FORM */}
           <form
             onSubmit={onSubmit}
             className="md:col-span-2 p-6 rounded-xl border border-gray-200 bg-white"
@@ -74,6 +88,7 @@ const Contact = () => {
                   autoComplete="name"
                 />
               </div>
+
               <div>
                 <label className="text-sm text-gray-600">Email</label>
                 <input
