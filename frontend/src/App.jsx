@@ -6,12 +6,18 @@ import Footer from "./components/Footer"
 import {Toaster} from 'react-hot-toast'
 import { useAppCOntext } from "./context/AppContext"
 import Login from "./components/Login"
+import EnquiryDrawer from "./components/EnquiryDrawer"
 import AllProduct from "./pages/AllProduct"
 import ProductCategory from "./pages/ProductCategory"
 import ProductDetails from "./pages/ProductDetails"
 import Cart from "./pages/Cart"
 import AddAddress from "./pages/AddAddress"
 import MyOrder from "./pages/MyOrder"
+import Contact from "./pages/Contact"
+import About from "./pages/About"
+import Blog from "./pages/Blog"
+import Applications from "./pages/Applications"
+import ApplicationDetails from "./pages/ApplicationDetails"
 import SellerLogin from "./components/seller/SellerLogin"
 import SellerLayout from "./pages/seller/SellerLayout"
 import AddProduct from "./pages/seller/AddProduct"
@@ -29,18 +35,26 @@ const App = () => {
       {isSellerPath ? null : <Navbar/>} 
 
       {showUserLogin ? <Login/> : null}
+      {isSellerPath ? null : <EnquiryDrawer/>}
 
       <Toaster/>
       
-      <div className={`${isSellerPath ? "" : " px-6 md:px-16 lg:px-24 xl:px-32"}`}>
+      <div className={`${isSellerPath ? "" : " px-4 md:px-16 lg:px-24 xl:px-32"}`}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<AllProduct />} />
           <Route path="/products/:category" element={<ProductCategory />} />
           <Route path="/products/:category/:id" element={<ProductDetails />} />
+          <Route path="/collections" element={<AllProduct />} />
+          <Route path="/collections/:category" element={<ProductCategory />} />
+          <Route path="/applications" element={<Applications />} />
+          <Route path="/applications/:slug" element={<ApplicationDetails />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/add-address" element={<AddAddress />} />
           <Route path="/my-orders" element={<MyOrder />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/blog" element={<Blog />} />
           <Route path="/loader" element={<Loading />} />
 
           <Route path="/seller" element={isSellar  ? <SellerLayout /> : <SellerLogin />} >

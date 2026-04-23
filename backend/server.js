@@ -10,6 +10,7 @@ import productRouter from './routes/productRoute.js'; // Import the product rout
 import cartRouter from './routes/cartRoute.js'; // Import the cart router
 import addressRouter from './routes/addressRoute.js'; // Import the address router
 import orderRouter from './routes/orderRoute.js'; // Import the order router
+import enquiryRouter from './routes/enquiryRoute.js';
 import { stripeWebhook } from './controllers/orderController.js';
 
 
@@ -47,6 +48,8 @@ app.use('/api/cart', cartRouter); // Use the cart router for cart-related routes
 app.use('/api/address', addressRouter); // Use the address router for address-related routes
 
 app.use('/api/order', orderRouter); // Use the order router for order-related routes
+
+app.use('/api/enquiry', enquiryRouter);
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

@@ -20,8 +20,7 @@ import box_icon from "./box_icon.svg";
 import trust_icon from "./trust_icon.svg";
 import black_arrow_icon from "./black_arrow_icon.svg";
 import white_arrow_icon from "./white_arrow_icon.svg";
-import main_banner_bg from "./main_banner_bg.png";
-import main_banner_bg_sm from "./main_banner_bg_sm.png";
+import banner_vdo from "./banner_vdo.mp4";
 import bottom_banner_image from "./bottom_banner_image.png";
 import bottom_banner_image_sm from "./bottom_banner_image_sm.png";
 import add_address_iamge from "./add_address_image.svg";
@@ -98,8 +97,7 @@ export const assets = {
   trust_icon,
   black_arrow_icon,
   white_arrow_icon,
-  main_banner_bg,
-  main_banner_bg_sm,
+  banner_vdo,
   bottom_banner_image,
   bottom_banner_image_sm,
   add_address_iamge,
@@ -132,8 +130,8 @@ export const categories = [
     bgColor: "#E1F5EC",
   },
   {
-    text: "Natural Stone",
-    path: "Natural_Stone",
+    text: "Sanitary",
+    path: "Sanitary",
     image: natural_stone_image,
     bgColor: "#FEE6CD",
   },
@@ -153,32 +151,24 @@ export const categories = [
 
 export const footerLinks = [
   {
-    title: "Quick Links",
+    title: "Company",
     links: [
-      { text: "Home", url: "#" },
-      { text: "Best Sellers", url: "#" },
-      { text: "Offers & Deals", url: "#" },
-      { text: "Contact Us", url: "#" },
-      { text: "FAQs", url: "#" },
+      { text: "About", url: "/about" },
+      { text: "Contact", url: "/contact" },
     ],
   },
   {
-    title: "Need help?",
+    title: "Explore",
     links: [
-      { text: "Delivery Information", url: "#" },
-      { text: "Return & Refund Policy", url: "#" },
-      { text: "Payment Methods", url: "#" },
-      { text: "Track your Order", url: "#" },
-      { text: "Contact Us", url: "#" },
+      { text: "Collections", url: "/collections" },
+      { text: "Applications", url: "/applications" },
+      { text: "Request a Quote", url: "/contact" },
     ],
   },
   {
-    title: "Follow Us",
+    title: "Seller",
     links: [
-      { text: "Instagram", url: "#" },
-      { text: "Twitter", url: "#" },
-      { text: "Facebook", url: "#" },
-      { text: "YouTube", url: "#" },
+      { text: "Seller Dashboard", url: "/seller" },
     ],
   },
 ];

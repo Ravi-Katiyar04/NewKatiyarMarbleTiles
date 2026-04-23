@@ -61,28 +61,34 @@ export const placedOrderStripe= async (req, res) => {
 
         amount += Math.floor(amount * 0.02); // Adding 2% TAX
 
+        const depositPercent = 10;
+        const depositAmount = Math.max(1, Math.round(amount * (depositPercent / 100)));
+
         const order=await Order.create({
             userId,
             items,
             amount,
+            paidAmount: 0,
+            depositPercent,
             address,
             paymentType: "Online",
         });
 
         const stripeInstance =new stripe(process.env.STRIPE_SECRET_KEY);
 
-        const line_items= productData.map((item) => {
-            return {
+        // Charge only the booking deposit (10%) and keep the full amount in DB for later settlement.
+        const line_items = [
+            {
                 price_data: {
                     currency: "inr",
                     product_data: {
-                        name: item.name,
+                        name: `Booking deposit (${depositPercent}%)`,
                     },
-                    unit_amount: Math.floor(item.price + item.price * 0.02) * 100,
+                    unit_amount: depositAmount * 100,
                 },
-                quantity: item.quantity,
-            };
-        });
+                quantity: 1,
+            },
+        ];
 
         const session = await stripeInstance.checkout.sessions.create({
             line_items,
@@ -92,6 +98,7 @@ export const placedOrderStripe= async (req, res) => {
             metadata: {
                 orderId: order._id.toString(),
                 userId,
+                depositAmount: depositAmount.toString(),
             },
         });
 
@@ -108,7 +115,14 @@ export const getUserOrders = async (req, res) => {
     try {
         
         const { userId } = req;
-        const orders = await Order.find({ userId, $or: [{ paymentType: "COD" }, { isPaid: "true" }] }).populate("items.product").populate("address").sort({ createdAt: -1 });
+        // Users should see COD orders immediately, and online orders only after payment succeeds.
+        const orders = await Order.find({
+            userId,
+            $or: [{ paymentType: "COD" }, { isPaid: true }],
+        })
+            .populate("items.product")
+            .populate("address")
+            .sort({ createdAt: -1 });
 
         res.json({success: true, orders: orders});
     } catch (error) {
@@ -120,11 +134,15 @@ export const getUserOrders = async (req, res) => {
 
 export const getAllOrders = async (req, res) => {
     try {
-        const orders = await Order.find( {$or: [{ paymentType: "cod" }, { isPaid: "true" }]}).populate("items.product").populate("address").sort({ createdAt: -1 });
-        res.json({success: true, orders: orders});
+        // Sellers/admin should see all bookings/enquiries (paid or pending).
+        const orders = await Order.find({})
+            .populate("items.product")
+            .populate("address")
+            .sort({ createdAt: -1 });
+        res.json({ success: true, orders });
     } catch (error) {
         console.error("Error fetching orders:", error.message);
-        return res.json({ success: false, message: error,message });
+        return res.json({ success: false, message: error.message });
     }
 }
 
@@ -148,9 +166,12 @@ export const stripeWebhook = async (req, res) => {
             const session= await stripeInstance.checkout.sessions.list({
                 payment_intent: paymentIntentId,
             });
-            const {orderId, userId} = session.data[0].metadata;
+            const {orderId, userId, depositAmount} = session.data[0].metadata;
 
-            await Order.findByIdAndUpdate(orderId, {isPaid: true});
+            await Order.findByIdAndUpdate(orderId, {
+                isPaid: true,
+                paidAmount: Number(depositAmount || 0),
+            });
 
             await User.findByIdAndUpdate(userId, {cartItems: {}});
 
