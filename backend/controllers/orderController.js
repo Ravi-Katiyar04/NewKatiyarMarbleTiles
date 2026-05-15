@@ -5,9 +5,9 @@ import stripe from "stripe";
 
 export const placedOrderCOD= async (req, res) => {
     try {
-        const {  items, address } = req.body;
+        const { items } = req.body;
         const {userId} = req;
-        if( !address || items.length === 0) {
+        if (!items?.length) {
             return res.json({success: false, message: "Invalid order data" });
         }
 
@@ -23,7 +23,6 @@ export const placedOrderCOD= async (req, res) => {
             userId,
             items,
             amount,
-            address,
             paymentType: "COD",
         });
         return res.json({success: true, message: "Order placed successfully" });
@@ -38,11 +37,11 @@ export const placedOrderCOD= async (req, res) => {
 
 export const placedOrderStripe= async (req, res) => {
     try {
-        const {  items, address } = req.body;
+        const { items } = req.body;
         const {userId} = req;
 
         const {origin} = req.headers;
-        if( !address || items.length === 0) {
+        if (!items?.length) {
             return res.json({success: false, message: "Invalid order data" });
         }
 
@@ -70,7 +69,6 @@ export const placedOrderStripe= async (req, res) => {
             amount,
             paidAmount: 0,
             depositPercent,
-            address,
             paymentType: "Online",
         });
 
@@ -137,6 +135,7 @@ export const getAllOrders = async (req, res) => {
         // Sellers/admin should see all bookings/enquiries (paid or pending).
         const orders = await Order.find({})
             .populate("items.product")
+            .populate("userId", "name email")
             .populate("address")
             .sort({ createdAt: -1 });
         res.json({ success: true, orders });

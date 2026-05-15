@@ -70,20 +70,17 @@ const Orders = () => {
 
                         <div className="text-sm md:text-base text-black/60">
                             <p className='text-black/80'>
-                                {(order.address && typeof order.address === "object" ? `${order.address.firstName || ""} ${order.address.lastName || ""}`.trim() : "Customer")}
+                                {order.userId?.name || "Customer"}
                             </p>
-                            <p>
-                                {(order.address && typeof order.address === "object" ? `${order.address.street || ""}${order.address.city ? `, ${order.address.city}` : ""}` : "Address details unavailable")}
-                            </p>
-                            <p>
-                                {(order.address && typeof order.address === "object"
-                                    ? `${order.address.state || ""}${order.address.zipcode ? `, ${order.address.zipcode}` : ""}${order.address.country ? `, ${order.address.country}` : ""}`.replace(/^,\s*/, "")
-                                    : "")}
-                            </p>
-                            <p>
-
-                            </p>
-                            <p>Mobile No.: {" "}{(order.address && typeof order.address === "object" ? order.address.phone : "-")}</p>
+                            <p>{order.userId?.email || "Email unavailable"}</p>
+                            {order.address && typeof order.address === "object" ? (
+                                <>
+                                    <p>
+                                        {`${order.address.street || ""}${order.address.city ? `, ${order.address.city}` : ""}`}
+                                    </p>
+                                    <p>Mobile No.: {order.address.phone || "-"}</p>
+                                </>
+                            ) : null}
                         </div>
 
                         <p className="font-medium text-lg my-auto text-black/70">{currency}{order.amount}</p>

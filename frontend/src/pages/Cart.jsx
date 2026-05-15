@@ -1,16 +1,12 @@
 import  { useState, useEffect} from 'react';
 import { useAppCOntext } from '../context/AppContext'
-// import { dummyAddress } from '../assets/assets';
 import {assets} from '../assets/assets';
 import toast from 'react-hot-toast';
 const Cart = () => {
     
-    const { getCartCount, getTotalPrice, cartItems, setCartItems, removeFromCart, updateCardItems, products,currency, navigate,axios, user } = useAppCOntext();
+    const { getCartCount, getTotalPrice, cartItems, removeFromCart, updateCardItems, products,currency, navigate,axios, user, setShowUserLogin } = useAppCOntext();
 
     const [cartArray, setCartArray] = useState([]);
-    const [addresses, setAddress] = useState([]);
-    const [showAddress, setShowAddress] = useState(false)
-    const [selectedAddress, setSelectedAddress] = useState(null);
 
     const getCart= () => {
         let tempArray = [];
@@ -22,30 +18,17 @@ const Cart = () => {
         setCartArray(tempArray);
     }
 
-    const getUserAddress = async() => {
-        try {
-            const { data } = await axios.get("/api/address/get");
-            if (data.success) {
-                setAddress(data.addresses);
-                if (data.addresses.length > 0) {
-                    setSelectedAddress(data.addresses[0]);
-                }
-            } else {
-                toast.error(data.message);
-            }
-        } catch (error) {
-            toast.error(error.message); 
-        }   
-    }
     const placeOrder =async () => {
         try {
-            if (!selectedAddress) {
-                return toast.error("Please select an address");
+            if (!user) {
+                setShowUserLogin(true);
+                return toast.error("Please login to book your order");
+            }
+            if (cartArray.length === 0) {
+                return toast.error("Your cart is empty");
             }
             const { data } = await axios.post("/api/order/stripe", { 
-                userId: user._id,
                 items: cartArray.map((item) => ({ product: item._id, quantity: item.quantity })),
-                address: selectedAddress._id,
              });
             if (data.success) {
                 window.location.replace(data.url);
@@ -62,12 +45,6 @@ const Cart = () => {
             getCart();
         }
     }, [cartItems, products]);
-
-    useEffect(() => {
-        if(user){
-            getUserAddress();
-        }
-    }, [user]);
 
     return products.length > 0 && cartItems ?(
         <div className="flex flex-col md:flex-row md:py-16 py-6 max-w-6xl w-full  mx-auto">
@@ -122,29 +99,9 @@ const Cart = () => {
                 <hr className="border-gray-300 my-5" />
 
                 <div className="mb-6">
-                    <p className="text-sm font-medium uppercase">Delivery Address</p>
-                    <div className="relative flex justify-between items-start mt-2">
-                        <p className="text-gray-500">{selectedAddress? `${selectedAddress.street}, ${selectedAddress.city}, ${selectedAddress.state}, ${selectedAddress.country}` : "No address found"}</p>
-                        <button onClick={() => setShowAddress(!showAddress)} className="text-indigo-500 hover:underline cursor-pointer">
-                            Change
-                        </button>
-                        {showAddress && (
-                            <div className="absolute top-12 py-1 bg-white border border-gray-300 text-sm w-full">
-                                {addresses.map((address, index) => (
-                                    <p key={index} onClick={() => {setSelectedAddress(address), setShowAddress(false)}} className="p-2 cursor-pointer hover:bg-indigo-500/10">
-                                        {address.street}, {address.city}, {address.state}, {address.country}
-                                    </p>
-                                ))}
-                                <p onClick={() => navigate("/add-address")} className="text-indigo-500 text-center cursor-pointer p-2 hover:bg-indigo-500/10">
-                                    Add address
-                                </p>
-                            </div>
-                        )}
-                    </div>
-
-                    <p className="text-sm font-medium uppercase mt-6">Payment</p>
+                    <p className="text-sm font-medium uppercase">Booking</p>
                     <p className="mt-2 text-sm text-gray-500">
-                        Pay <span className="font-semibold text-gray-700">10%</span> deposit now to book. Our team will contact you for measurement, delivery and remaining payment.
+                        Pay <span className="font-semibold text-gray-700">10%</span> of the total amount now to confirm your booking. Our team will contact you for measurement, delivery, and the remaining payment.
                     </p>
                 </div>
 

@@ -35,7 +35,6 @@ const orderSchema = new mongoose.Schema({
     },
     address: {
         type: mongoose.Schema.Types.ObjectId,
-        required: true,
         ref: "Address",
     },        
     status: {

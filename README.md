@@ -22,6 +22,9 @@ This README provides setup instructions for both the frontend and backend, along
    ```
    PORT=5000
    MONGODB_URI=<your_mongodb_connection_string>
+   MONGODB_DNS_SERVERS=1.1.1.1,8.8.8.8
+   # Optional: use Atlas "standard" (non-SRV) URI if DNS keeps failing locally
+   # MONGODB_URI_STANDARD=mongodb://user:pass@host1:27017,host2:27017/db?ssl=true&authSource=admin
    JWT_SECRET=<your_jwt_secret>
    CLOUDINARY_CLOUD_NAME=<your_cloudinary_cloud_name>
    CLOUDINARY_API_KEY=<your_cloudinary_api_key>
