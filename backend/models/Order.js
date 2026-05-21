@@ -41,6 +41,19 @@ const orderSchema = new mongoose.Schema({
         type: String,
         default: "order placed",
     },
+    bookingStatus: {
+        type: String,
+        enum: ["pending", "confirmed", "rejected"],
+        default: "pending",
+    },
+    rejectionReason: {
+        type: String,
+        default: "",
+    },
+    statusUpdatedAt: {
+        type: Date,
+        default: null,
+    },
     paymentType: {
         type: String,
         required: true,

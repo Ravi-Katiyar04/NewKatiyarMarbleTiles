@@ -13,6 +13,10 @@ import ProductDetails from "./pages/ProductDetails"
 import Cart from "./pages/Cart"
 import AddAddress from "./pages/AddAddress"
 import MyOrder from "./pages/MyOrder"
+import BookingDetail from "./pages/BookingDetail"
+import EnquiryDetail from "./pages/EnquiryDetail"
+import Notifications from "./pages/Notifications"
+import NotificationDetail from "./pages/NotificationDetail"
 import Contact from "./pages/Contact"
 import About from "./pages/About"
 import Blog from "./pages/Blog"
@@ -52,6 +56,10 @@ const App = () => {
           <Route path="/cart" element={<Cart />} />
           <Route path="/add-address" element={<AddAddress />} />
           <Route path="/my-orders" element={<MyOrder />} />
+          <Route path="/my-orders/booking/:id" element={<BookingDetail />} />
+          <Route path="/my-orders/enquiry/:id" element={<EnquiryDetail />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/notifications/:id" element={<NotificationDetail />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/about" element={<About />} />
           <Route path="/blog" element={<Blog />} />

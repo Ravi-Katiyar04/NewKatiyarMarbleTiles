@@ -2,6 +2,7 @@ import Product from "../models/Product.js";
 import Order from "../models/Order.js";
 import User from "../models/User.js";
 import stripe from "stripe";
+import { createNotification } from "../utils/createNotification.js";
 
 export const placedOrderCOD= async (req, res) => {
     try {
@@ -109,6 +110,30 @@ export const placedOrderStripe= async (req, res) => {
     }
 }
 
+export const getUserOrderById = async (req, res) => {
+    try {
+        const { userId } = req;
+        const { id } = req.params;
+
+        const order = await Order.findOne({
+            _id: id,
+            userId,
+            $or: [{ paymentType: "COD" }, { isPaid: true }],
+        })
+            .populate("items.product")
+            .populate("address");
+
+        if (!order) {
+            return res.json({ success: false, message: "Booking not found." });
+        }
+
+        return res.json({ success: true, order });
+    } catch (error) {
+        console.error("Error fetching order:", error.message);
+        return res.json({ success: false, message: error.message });
+    }
+};
+
 export const getUserOrders = async (req, res) => {
     try {
         
@@ -144,6 +169,111 @@ export const getAllOrders = async (req, res) => {
         return res.json({ success: false, message: error.message });
     }
 }
+
+export const updateBookingStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const action = (req.body?.action || "").trim().toLowerCase();
+        const reason = (req.body?.reason || "").trim();
+
+        if (!["confirm", "reject"].includes(action)) {
+            return res.json({ success: false, message: "Invalid action. Use confirm or reject." });
+        }
+
+        const order = await Order.findById(id).populate("userId", "name email");
+        if (!order) {
+            return res.json({ success: false, message: "Booking not found." });
+        }
+
+        if (action === "reject" && !reason) {
+            return res.json({ success: false, message: "Rejection reason is required." });
+        }
+
+        if (order.bookingStatus === "confirmed" || order.bookingStatus === "rejected") {
+            return res.json({
+                success: false,
+                message: `Booking already ${order.bookingStatus}.`,
+            });
+        }
+
+        const update =
+            action === "confirm"
+                ? {
+                      bookingStatus: "confirmed",
+                      status: "confirmed",
+                      rejectionReason: "",
+                      statusUpdatedAt: new Date(),
+                  }
+                : {
+                      bookingStatus: "rejected",
+                      status: "rejected",
+                      rejectionReason: reason,
+                      statusUpdatedAt: new Date(),
+                  };
+
+        const updated = await Order.findByIdAndUpdate(id, update, { new: true })
+            .populate("items.product")
+            .populate("userId", "name email");
+
+        if (order.userId?._id || order.userId) {
+            const userId = order.userId._id || order.userId;
+            if (action === "confirm") {
+                await createNotification({
+                    userId,
+                    type: "booking_confirmed",
+                    title: "Booking confirmed",
+                    message:
+                        "Your booking has been confirmed. You can download your receipt from booking details.",
+                    refId: order._id,
+                    refType: "order",
+                    meta: { amount: order.amount, paidAmount: order.paidAmount },
+                });
+            } else {
+                await createNotification({
+                    userId,
+                    type: "booking_rejected",
+                    title: "Booking rejected",
+                    message: reason,
+                    refId: order._id,
+                    refType: "order",
+                    meta: { rejectionReason: reason, amount: order.amount },
+                });
+            }
+        }
+
+        return res.json({ success: true, order: updated });
+    } catch (error) {
+        console.error("Error updating booking status:", error.message);
+        return res.json({ success: false, message: error.message });
+    }
+};
+
+export const getBookingReceipt = async (req, res) => {
+    try {
+        const { userId } = req;
+        const { id } = req.params;
+
+        const order = await Order.findOne({ _id: id, userId })
+            .populate("items.product")
+            .populate("userId", "name email");
+
+        if (!order) {
+            return res.json({ success: false, message: "Booking not found." });
+        }
+
+        if (order.bookingStatus !== "confirmed") {
+            return res.json({
+                success: false,
+                message: "Receipt is available only for confirmed bookings.",
+            });
+        }
+
+        return res.json({ success: true, order });
+    } catch (error) {
+        console.error("Error fetching booking receipt:", error.message);
+        return res.json({ success: false, message: error.message });
+    }
+};
 
 export const stripeWebhook = async (req, res) => {  
     const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);

@@ -1,5 +1,6 @@
 import Enquiry from "../models/Enquiry.js";
 import jwt from "jsonwebtoken";
+import { createNotification } from "../utils/createNotification.js";
 
 export const createEnquiry = async (req, res) => {
   try {
@@ -45,6 +46,23 @@ export const getAllEnquiries = async (req, res) => {
   }
 };
 
+export const getUserEnquiryById = async (req, res) => {
+  try {
+    const { userId } = req;
+    const { id } = req.params;
+
+    const enquiry = await Enquiry.findOne({ _id: id, userId });
+    if (!enquiry) {
+      return res.json({ success: false, message: "Enquiry not found." });
+    }
+
+    return res.json({ success: true, enquiry });
+  } catch (error) {
+    console.error("Error fetching enquiry:", error.message);
+    return res.json({ success: false, message: error.message });
+  }
+};
+
 export const getUserEnquiries = async (req, res) => {
   try {
     const { userId } = req;
@@ -60,22 +78,37 @@ export const respondToEnquiry = async (req, res) => {
   try {
     const { id } = req.params;
     const message = (req.body?.message || "").trim();
-    const status = (req.body?.status || "").trim();
 
     if (!message) {
       return res.json({ success: false, message: "Response message is required." });
     }
 
-    const update = {
-      "response.message": message,
-      "response.respondedAt": new Date(),
-    };
-    if (status) update.status = status;
-    else update.status = "responded";
-
-    const enquiry = await Enquiry.findByIdAndUpdate(id, update, { new: true });
+    const enquiry = await Enquiry.findById(id);
     if (!enquiry) return res.json({ success: false, message: "Enquiry not found." });
-    return res.json({ success: true, enquiry });
+
+    if (enquiry.userId) {
+      await createNotification({
+        userId: enquiry.userId,
+        type: "enquiry_reply",
+        title: "Reply to your enquiry",
+        message: `Requirement: ${enquiry.requirement}\n\nReply: ${message}`,
+        refId: enquiry._id,
+        refType: "enquiry",
+        meta: {
+          name: enquiry.name,
+          phone: enquiry.phone,
+          requirement: enquiry.requirement,
+          reply: message,
+        },
+      });
+    }
+
+    await Enquiry.findByIdAndDelete(id);
+
+    return res.json({
+      success: true,
+      message: "Reply sent. Enquiry removed from database.",
+    });
   } catch (error) {
     console.error("Error responding to enquiry:", error.message);
     return res.json({ success: false, message: error.message });

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { useAppCOntext } from "../context/AppContext";
+import NotificationBell from "./NotificationBell";
 import toast from "react-hot-toast";
 
 const Navbar = () => {
@@ -147,6 +148,8 @@ const Navbar = () => {
                         </span>
                     </button>
 
+                    <NotificationBell />
+
                     {!user ? (
                         <button
                             onClick={() => setShowUserLogin(true)}
@@ -226,6 +229,13 @@ const Navbar = () => {
                             Seller
                         </NavLink>
 
+                        {user && (
+                            <div className="mt-2 flex items-center gap-2">
+                                <span className="text-xs text-gray-500 uppercase tracking-wider">Notifications</span>
+                                <NotificationBell />
+                            </div>
+                        )}
+
                         {!user ? (
                             <button
                                 onClick={() => {
@@ -237,15 +247,26 @@ const Navbar = () => {
                                 Login
                             </button>
                         ) : (
-                            <button
-                                onClick={() => {
-                                    setOpen(false);
-                                    handleLogout();
-                                }}
-                                className="mt-2 h-10 bg-black text-white text-xs tracking-[0.2em] uppercase"
-                            >
-                                Logout
-                            </button>
+                            <>
+                                <button
+                                    onClick={() => {
+                                        setOpen(false);
+                                        navigate("/my-orders");
+                                    }}
+                                    className="mt-2 h-10 w-full border border-gray-300 text-xs tracking-[0.2em] uppercase"
+                                >
+                                    My bookings
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setOpen(false);
+                                        handleLogout();
+                                    }}
+                                    className="mt-2 h-10 bg-black text-white text-xs tracking-[0.2em] uppercase w-full"
+                                >
+                                    Logout
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>

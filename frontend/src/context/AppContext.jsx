@@ -25,6 +25,8 @@ export const AppContextProvider = ({ children }) => {
 
     const [cartItems, setCartItems] = useState({})
     const [searchQuery, setSearchQuery] = useState({})
+    const [notifications, setNotifications] = useState([])
+    const [unreadCount, setUnreadCount] = useState(0)
 
     // Function to fetch the current user and set it in state
     const fetchUser = async () => {
@@ -73,6 +75,41 @@ export const AppContextProvider = ({ children }) => {
         }
         return Math.floor(totalAmount * 100) / 100;
     }
+
+    const fetchNotifications = async () => {
+        if (!user) {
+            setNotifications([]);
+            setUnreadCount(0);
+            return;
+        }
+        try {
+            const { data } = await axios.get("/api/notification/user");
+            if (data.success) {
+                setNotifications(data.notifications || []);
+                setUnreadCount(data.unreadCount || 0);
+            }
+        } catch (error) {
+            console.error("Error fetching notifications:", error.message);
+        }
+    };
+
+    const markNotificationRead = async (id) => {
+        try {
+            const { data } = await axios.put(`/api/notification/${id}/read`);
+            if (data.success) fetchNotifications();
+        } catch (error) {
+            console.error("Error marking notification read:", error.message);
+        }
+    };
+
+    const markAllNotificationsRead = async () => {
+        try {
+            const { data } = await axios.put("/api/notification/read-all");
+            if (data.success) fetchNotifications();
+        } catch (error) {
+            console.error("Error marking all notifications read:", error.message);
+        }
+    };
 
     const fetchProducts = async () => {
         try {
@@ -130,6 +167,16 @@ export const AppContextProvider = ({ children }) => {
     }, [])
 
     useEffect(() => {
+        if (user) {
+            fetchNotifications();
+            const interval = setInterval(fetchNotifications, 60000);
+            return () => clearInterval(interval);
+        }
+        setNotifications([]);
+        setUnreadCount(0);
+    }, [user]);
+
+    useEffect(() => {
         const updateCart = async () => {
             try {
                 const { data } = await axios.post("/api/cart/update", { cartItems });
@@ -167,7 +214,12 @@ export const AppContextProvider = ({ children }) => {
         getTotalPrice,
         axios,
         fetchProducts,
-        setCartItems
+        setCartItems,
+        notifications,
+        unreadCount,
+        fetchNotifications,
+        markNotificationRead,
+        markAllNotificationsRead,
     };
 
     return (

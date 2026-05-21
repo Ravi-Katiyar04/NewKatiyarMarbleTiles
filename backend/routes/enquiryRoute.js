@@ -1,5 +1,11 @@
 import express from "express";
-import { createEnquiry, getAllEnquiries, getUserEnquiries, respondToEnquiry } from "../controllers/enquiryController.js";
+import {
+  createEnquiry,
+  getAllEnquiries,
+  getUserEnquiries,
+  getUserEnquiryById,
+  respondToEnquiry,
+} from "../controllers/enquiryController.js";
 import authSeller from "../middlewares/authSeller.js";
 import authUser from "../middlewares/authUser.js";
 
@@ -10,6 +16,7 @@ enquiryRouter.post("/", createEnquiry);
 
 // User: view own enquiries (and responses)
 enquiryRouter.get("/user", authUser, getUserEnquiries);
+enquiryRouter.get("/user/:id", authUser, getUserEnquiryById);
 
 // Seller/admin: view all enquiries
 enquiryRouter.get("/seller", authSeller, getAllEnquiries);
