@@ -10,6 +10,12 @@ export function downloadBookingReceipt(order, { currency = "₹", userName = "" 
         )
         .join("");
 
+    const depositPercent = order.depositPercent || 10;
+    const paidDeposit = order.isPaid
+        ? (order.paidAmount > 0 ? order.paidAmount : Math.max(1, Math.round(order.amount * (depositPercent / 100))))
+        : 0;
+    const remainingBalance = Math.max(0, order.amount - paidDeposit);
+
     const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -25,6 +31,8 @@ export function downloadBookingReceipt(order, { currency = "₹", userName = "" 
     .totals { margin-top: 20px; font-size: 14px; }
     .totals p { margin: 6px 0; }
     .badge { display: inline-block; background: #166534; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 12px; }
+    .status-paid { color: #166534; font-weight: bold; }
+    .status-pending { color: #b45309; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -41,9 +49,10 @@ export function downloadBookingReceipt(order, { currency = "₹", userName = "" 
     <tbody>${items}</tbody>
   </table>
   <div class="totals">
-    <p><strong>Total:</strong> ${currency}${order.amount}</p>
-    <p><strong>Deposit paid (${order.depositPercent || 10}%):</strong> ${currency}${order.paidAmount || 0}</p>
-    <p><strong>Payment:</strong> ${order.paymentType || "Online"}</p>
+    <p><strong>Total Amount:</strong> ${currency}${order.amount}</p>
+    <p><strong>Deposit (${depositPercent}%):</strong> ${currency}${paidDeposit} <span class="${order.isPaid ? 'status-paid' : 'status-pending'}">(${order.isPaid ? 'PAID' : 'PENDING'})</span></p>
+    <p><strong>Remaining Balance (payable on delivery):</strong> ${currency}${remainingBalance}</p>
+    <p><strong>Payment Method:</strong> ${order.paymentType || "Online"}</p>
   </div>
   <p class="muted" style="margin-top:32px;">Thank you for your booking.</p>
 </body>

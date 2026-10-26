@@ -91,8 +91,10 @@ const MyOrder = () => {
                                 </div>
                                 <p className="text-sm text-gray-500 mt-1">
                                     {new Date(order.createdAt).toLocaleDateString()} · Deposit:{" "}
-                                    {order.isPaid ? "Paid" : "Pending"} · {currency}
-                                    {order.amount}
+                                    <span className={order.isPaid ? "text-green-600 font-medium" : "text-amber-600 font-medium"}>
+                                        {order.isPaid ? `Paid (${currency}${order.paidAmount || Math.round(order.amount * 0.1)})` : "Pending"}
+                                    </span>{" "}
+                                    · Total: {currency}{order.amount}
                                 </p>
                                 <p className="text-xs text-indigo-600 mt-2">View details →</p>
                             </button>

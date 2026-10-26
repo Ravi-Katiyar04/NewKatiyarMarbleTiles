@@ -87,7 +87,9 @@ const BookingDetail = () => {
                 </p>
                 <p>
                     <span className="font-medium text-gray-800">Deposit:</span>{" "}
-                    {order.isPaid ? `Paid (${currency}${order.paidAmount || 0})` : "Pending"}
+                    {order.isPaid
+                        ? `Paid (${currency}${order.paidAmount || Math.round(order.amount * 0.1)})`
+                        : "Pending"}
                 </p>
                 <p>
                     <span className="font-medium text-gray-800">Total amount:</span> {currency}

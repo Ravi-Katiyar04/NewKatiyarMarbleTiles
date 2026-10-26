@@ -106,7 +106,19 @@ const Orders = () => {
     return (
         <div className="no-scrollbar flex-1 md:px-14 overflow-y-scroll h-[calc(100vh-64px)]">
             <div className="md:p-10 p-4 space-y-6">
-                <h2 className="text-lg font-medium">Bookings / Enquiries</h2>
+                <div className="flex justify-between items-center">
+                    <h2 className="text-lg font-medium">Bookings / Enquiries</h2>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            fetchOrders();
+                            toast.success("Synced bookings & payments");
+                        }}
+                        className="px-3 py-1.5 text-xs font-medium border border-indigo-500 text-indigo-600 rounded hover:bg-indigo-50 transition cursor-pointer"
+                    >
+                        ↻ Sync Payments
+                    </button>
+                </div>
 
                 {orders.map((order) => (
                     <div
@@ -138,7 +150,14 @@ const Orders = () => {
                                     {order.amount}
                                 </p>
                                 <p>Date: {formatDate(order.createdAt)}</p>
-                                <p>Deposit: {order.isPaid ? "Paid" : "Pending"}</p>
+                                <p>
+                                    Deposit:{" "}
+                                    <span className={`font-semibold ${order.isPaid ? "text-green-600" : "text-amber-600"}`}>
+                                        {order.isPaid
+                                            ? `Paid (${currency}${order.paidAmount || Math.round(order.amount * 0.1)})`
+                                            : "Pending"}
+                                    </span>
+                                </p>
                                 <p>
                                     Status:{" "}
                                     <span
@@ -156,26 +175,41 @@ const Orders = () => {
                             </div>
                         </div>
 
-                        {order.bookingStatus === "pending" && (
-                            <div className="flex flex-wrap gap-3 pt-2 border-t border-gray-200">
-                                <button
-                                    type="button"
-                                    disabled={submittingId === order._id}
-                                    onClick={() => updateBooking(order._id, "confirm")}
-                                    className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
-                                >
-                                    Confirm booking
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={submittingId === order._id}
-                                    onClick={() => setRejectModal(order._id)}
-                                    className="px-4 py-2 border border-red-500 text-red-600 text-sm rounded hover:bg-red-50 disabled:opacity-50"
-                                >
-                                    Reject booking
-                                </button>
-                            </div>
-                        )}
+                        <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-gray-200">
+                            <button
+                                type="button"
+                                disabled={submittingId === order._id}
+                                onClick={() => updateBooking(order._id, order.isPaid ? "mark_pending" : "mark_paid")}
+                                className={`px-3 py-1.5 text-xs font-medium rounded border transition cursor-pointer disabled:opacity-50 ${
+                                    order.isPaid
+                                        ? "border-gray-300 text-gray-700 bg-gray-50 hover:bg-gray-100"
+                                        : "border-green-600 text-green-700 bg-green-50 hover:bg-green-100"
+                                }`}
+                            >
+                                {order.isPaid ? "Mark Deposit as Pending" : "✓ Mark Deposit as Paid"}
+                            </button>
+
+                            {order.bookingStatus === "pending" && (
+                                <>
+                                    <button
+                                        type="button"
+                                        disabled={submittingId === order._id}
+                                        onClick={() => updateBooking(order._id, "confirm")}
+                                        className="px-4 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 disabled:opacity-50 cursor-pointer"
+                                    >
+                                        Confirm booking
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={submittingId === order._id}
+                                        onClick={() => setRejectModal(order._id)}
+                                        className="px-4 py-1.5 border border-red-500 text-red-600 text-xs font-medium rounded hover:bg-red-50 disabled:opacity-50 cursor-pointer"
+                                    >
+                                        Reject booking
+                                    </button>
+                                </>
+                            )}
+                        </div>
 
                         {order.bookingStatus === "rejected" && order.rejectionReason && (
                             <p className="text-sm text-red-600 bg-red-50 p-3 rounded">

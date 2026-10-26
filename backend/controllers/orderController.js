@@ -169,7 +169,27 @@ export const getUserOrderById = async (req, res) => {
 export const getUserOrders = async (req, res) => {
     try {
         const { userId } = req;
-        // Return all bookings created by this user
+
+        // Auto-sync any unpaid online bookings with recent Stripe checkouts
+        const unpaidOnline = await Order.find({ userId, paymentType: "Online", isPaid: false });
+        if (unpaidOnline.length > 0) {
+            try {
+                const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
+                const sessions = await stripeInstance.checkout.sessions.list({ limit: 50 });
+                for (const session of sessions.data) {
+                    if (session.payment_status === "paid" && session.metadata?.orderId) {
+                        const depositAmount = Number(session.metadata.depositAmount || 0);
+                        await Order.findOneAndUpdate(
+                            { _id: session.metadata.orderId, userId },
+                            { isPaid: true, paidAmount: depositAmount }
+                        );
+                    }
+                }
+            } catch (stripeErr) {
+                console.error("Stripe sync error in getUserOrders:", stripeErr.message);
+            }
+        }
+
         const orders = await Order.find({ userId })
             .populate("items.product")
             .populate("address")
@@ -185,13 +205,33 @@ export const getUserOrders = async (req, res) => {
 
 export const getAllOrders = async (req, res) => {
     try {
+        // Auto-sync any unpaid online bookings with recent Stripe checkouts
+        const unpaidOnline = await Order.find({ paymentType: "Online", isPaid: false });
+        if (unpaidOnline.length > 0) {
+            try {
+                const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
+                const sessions = await stripeInstance.checkout.sessions.list({ limit: 50 });
+                for (const session of sessions.data) {
+                    if (session.payment_status === "paid" && session.metadata?.orderId) {
+                        const depositAmount = Number(session.metadata.depositAmount || 0);
+                        await Order.findByIdAndUpdate(session.metadata.orderId, {
+                            isPaid: true,
+                            paidAmount: depositAmount,
+                        });
+                    }
+                }
+            } catch (stripeErr) {
+                console.error("Stripe sync error in getAllOrders:", stripeErr.message);
+            }
+        }
+
         // Sellers/admin should see all bookings/enquiries (paid or pending).
         const orders = await Order.find({})
             .populate("items.product")
             .populate("userId", "name email")
             .populate("address")
             .sort({ createdAt: -1 });
-        res.json({ success: true, orders });
+        return res.json({ success: true, orders });
     } catch (error) {
         console.error("Error fetching orders:", error.message);
         return res.json({ success: false, message: error.message });
@@ -204,13 +244,39 @@ export const updateBookingStatus = async (req, res) => {
         const action = (req.body?.action || "").trim().toLowerCase();
         const reason = (req.body?.reason || "").trim();
 
-        if (!["confirm", "reject"].includes(action)) {
-            return res.json({ success: false, message: "Invalid action. Use confirm or reject." });
-        }
-
         const order = await Order.findById(id).populate("userId", "name email");
         if (!order) {
             return res.json({ success: false, message: "Booking not found." });
+        }
+
+        // Allow toggling deposit payment status
+        if (action === "mark_paid") {
+            const depositAmount = order.paidAmount > 0 
+                ? order.paidAmount 
+                : Math.max(1, Math.round(order.amount * ((order.depositPercent || 10) / 100)));
+            const updated = await Order.findByIdAndUpdate(
+                id,
+                { isPaid: true, paidAmount: depositAmount },
+                { new: true }
+            )
+                .populate("items.product")
+                .populate("userId", "name email");
+            return res.json({ success: true, order: updated, message: "Deposit marked as Paid." });
+        }
+
+        if (action === "mark_pending") {
+            const updated = await Order.findByIdAndUpdate(
+                id,
+                { isPaid: false, paidAmount: 0 },
+                { new: true }
+            )
+                .populate("items.product")
+                .populate("userId", "name email");
+            return res.json({ success: true, order: updated, message: "Deposit marked as Pending." });
+        }
+
+        if (!["confirm", "reject"].includes(action)) {
+            return res.json({ success: false, message: "Invalid action. Use confirm, reject, mark_paid, or mark_pending." });
         }
 
         if (action === "reject" && !reason) {
@@ -316,37 +382,64 @@ export const stripeWebhook = async (req, res) => {
     }
     // Handle the event based on its type
     switch (event.type) {
-        case 'payment_intent.succeeded':{
-            const paymentIntent = event.data.object;
-            const paymentIntentId = paymentIntent.id;
-
-            const session= await stripeInstance.checkout.sessions.list({
-                payment_intent: paymentIntentId,
-            });
-            const {orderId, userId, depositAmount} = session.data[0].metadata;
-
-            await Order.findByIdAndUpdate(orderId, {
-                isPaid: true,
-                paidAmount: Number(depositAmount || 0),
-            });
-
-            await User.findByIdAndUpdate(userId, {cartItems: {}});
-
+        case 'checkout.session.completed': {
+            const session = event.data.object;
+            const { orderId, userId, depositAmount } = session.metadata || {};
+            if (orderId) {
+                await Order.findByIdAndUpdate(orderId, {
+                    isPaid: true,
+                    paidAmount: Number(depositAmount || 0),
+                });
+            }
+            if (userId) {
+                await User.findByIdAndUpdate(userId, { cartItems: {} });
+            }
             break;
         }
-         case 'payment_intent.payment_failed':{
-            const paymentIntent = event.data.object;
-            const paymentIntentId = paymentIntent.id;
+        case 'payment_intent.succeeded': {
+            try {
+                const paymentIntent = event.data.object;
+                const paymentIntentId = paymentIntent.id;
 
-            const session= await stripeInstance.checkout.sessions.list({
-                payment_intent: paymentIntentId,
-            });
-            const {orderId} = session.data[0].metadata;
-
-            await Order.findByIdAndUpdate(orderId);
-
+                const session = await stripeInstance.checkout.sessions.list({
+                    payment_intent: paymentIntentId,
+                });
+                if (session?.data?.length > 0) {
+                    const { orderId, userId, depositAmount } = session.data[0].metadata || {};
+                    if (orderId) {
+                        await Order.findByIdAndUpdate(orderId, {
+                            isPaid: true,
+                            paidAmount: Number(depositAmount || 0),
+                        });
+                    }
+                    if (userId) {
+                        await User.findByIdAndUpdate(userId, { cartItems: {} });
+                    }
+                }
+            } catch (err) {
+                console.error("Error processing payment_intent.succeeded:", err.message);
+            }
             break;
-         }    
+        }
+        case 'payment_intent.payment_failed': {
+            try {
+                const paymentIntent = event.data.object;
+                const paymentIntentId = paymentIntent.id;
+
+                const session = await stripeInstance.checkout.sessions.list({
+                    payment_intent: paymentIntentId,
+                });
+                if (session?.data?.length > 0) {
+                    const { orderId } = session.data[0].metadata || {};
+                    if (orderId) {
+                        await Order.findByIdAndUpdate(orderId, { isPaid: false });
+                    }
+                }
+            } catch (err) {
+                console.error("Error processing payment_intent.payment_failed:", err.message);
+            }
+            break;
+        }    
         default:
             console.log(`Unhandled event type: ${event.type}`);
     }
