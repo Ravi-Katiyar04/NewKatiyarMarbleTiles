@@ -92,7 +92,7 @@ export const placedOrderStripe= async (req, res) => {
         const session = await stripeInstance.checkout.sessions.create({
             line_items,
             mode: "payment",
-            success_url: `${origin}/loader?next=my-orders`,
+            success_url: `${origin}/loader?next=my-orders&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${origin}/cart`,
             metadata: {
                 orderId: order._id.toString(),
@@ -110,6 +110,39 @@ export const placedOrderStripe= async (req, res) => {
     }
 }
 
+export const verifyStripePayment = async (req, res) => {
+    try {
+        const { sessionId } = req.query;
+        const { userId } = req;
+
+        if (!sessionId) {
+            return res.json({ success: false, message: "Session ID required" });
+        }
+
+        const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
+        const session = await stripeInstance.checkout.sessions.retrieve(sessionId);
+
+        if (session && (session.payment_status === "paid" || session.status === "complete")) {
+            const { orderId, depositAmount } = session.metadata || {};
+            if (orderId) {
+                await Order.findByIdAndUpdate(orderId, {
+                    isPaid: true,
+                    paidAmount: Number(depositAmount || 0),
+                });
+            }
+            if (userId) {
+                await User.findByIdAndUpdate(userId, { cartItems: {} });
+            }
+            return res.json({ success: true, message: "Payment verified successfully" });
+        }
+
+        return res.json({ success: false, message: "Payment not completed" });
+    } catch (error) {
+        console.error("Error verifying payment:", error.message);
+        return res.json({ success: false, message: error.message });
+    }
+};
+
 export const getUserOrderById = async (req, res) => {
     try {
         const { userId } = req;
@@ -118,7 +151,6 @@ export const getUserOrderById = async (req, res) => {
         const order = await Order.findOne({
             _id: id,
             userId,
-            $or: [{ paymentType: "COD" }, { isPaid: true }],
         })
             .populate("items.product")
             .populate("address");
@@ -136,21 +168,17 @@ export const getUserOrderById = async (req, res) => {
 
 export const getUserOrders = async (req, res) => {
     try {
-        
         const { userId } = req;
-        // Users should see COD orders immediately, and online orders only after payment succeeds.
-        const orders = await Order.find({
-            userId,
-            $or: [{ paymentType: "COD" }, { isPaid: true }],
-        })
+        // Return all bookings created by this user
+        const orders = await Order.find({ userId })
             .populate("items.product")
             .populate("address")
             .sort({ createdAt: -1 });
 
-        res.json({success: true, orders: orders});
+        return res.json({ success: true, orders: orders });
     } catch (error) {
         console.error("Error fetching orders:", error.message);
-        return res.json({success: false, message: error.message });
+        return res.json({ success: false, message: error.message });
     }
 }
 

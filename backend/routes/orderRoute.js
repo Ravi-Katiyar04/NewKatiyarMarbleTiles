@@ -5,6 +5,7 @@ import {
     getUserOrderById,
     getAllOrders,
     placedOrderStripe,
+    verifyStripePayment,
     updateBookingStatus,
     getBookingReceipt,
 } from '../controllers/orderController.js';
@@ -26,6 +27,7 @@ orderRouter.get('/seller', authSeller, getAllOrders); // For admin
 
 // Route to create a new order with Stripe
 orderRouter.post('/stripe', authUser, placedOrderStripe);
+orderRouter.get('/verify-stripe', authUser, verifyStripePayment);
 
 // User: receipt data for confirmed booking
 orderRouter.get('/:id/receipt', authUser, getBookingReceipt);
